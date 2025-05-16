@@ -381,7 +381,7 @@ function saveRepoConfigs(configs: RepoConfigs): boolean {
 // Load configurations from file at startup
 let repoConfigs: RepoConfigs = loadRepoConfigs();
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
     console.log(`Webhook server listening on port ${PORT}`);
     console.log(
         `Configured repositories: ${Object.keys(repoConfigs).join(", ")}`
