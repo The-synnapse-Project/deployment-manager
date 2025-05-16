@@ -274,18 +274,10 @@ function deployRepository(
     const commands = [
         `cd ${repoPath}`,
         "git pull",
-        // Pre-deployment checks
-        'test -f docker-compose.yml || (echo "docker-compose.yml not found" && exit 1)',
-        // Validate docker-compose file
-        'docker compose config -q || (echo "Invalid docker-compose.yml" && exit 1)',
-        // Perform the zero-downtime update
-        `DEPLOYMENT_VERSION=${deploymentVersion} docker compose up -d --build`,
-        // Verify deployment success
+        "cd ..",
+        `docker compose up -d --build`,
         'sleep 10 && docker compose ps --filter "status=running" | grep -v "Down" || (echo "Deployment verification failed" && exit 1)',
     ].join(" && ");
-
-    console.log(`Executing deployment commands for ${repoName}: ${commands}`);
-
     exec(commands, (error, stdout, stderr) => {
         if (error) {
             console.error(`Deployment error for ${repoName}: ${error.message}`);
