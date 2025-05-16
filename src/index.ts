@@ -4,6 +4,9 @@ import { exec } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import * as https from "https";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 // Type definitions
 interface RepoConfig {
@@ -281,35 +284,40 @@ function deployRepository(
         'sleep 10 && docker compose ps --filter "status=running" | grep -v "Down" || (echo "Deployment verification failed" && exit 1)',
     ].join(" && ");
 
+    console.log(`Executing deployment commands for ${repoName}: ${commands}`);
+
     exec(commands, (error, stdout, stderr) => {
         if (error) {
             console.error(`Deployment error for ${repoName}: ${error.message}`);
 
-            // Attempt rollback to previous version
-            console.log(`Attempting rollback for ${repoName}...`);
-            const rollbackCommands = [
-                `cd ${repoPath}`,
-                "git reset --hard HEAD@{1}",
-                "docker compose up -d --build",
-            ].join(" && ");
+            if (DISCORD_WEBHOOK) {
+                const url = new URL(DISCORD_WEBHOOK);
 
-            exec(
-                rollbackCommands,
-                (rollbackError, rollbackStdout, rollbackStderr) => {
-                    if (rollbackError) {
-                        console.error(
-                            `Rollback failed for ${repoName}: ${rollbackError.message}`
-                        );
-                    } else {
-                        console.log(`Rollback successful for ${repoName}`);
-                    }
+                const notification: NotificationPayload = {
+                    text: `❌ Deployment failed for ${repoName}\nPath: ${repoConfig.path}\nError: ${error.message}`,
+                };
 
-                    res.statusCode = 500;
-                    res.end(
-                        `Deployment failed for ${repoName}, rollback attempted`
+                const requestData = JSON.stringify(notification);
+
+                const req = https.request({
+                    hostname: url.hostname,
+                    path: url.pathname + url.search,
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Content-Length": Buffer.byteLength(requestData),
+                    },
+                });
+
+                req.on("error", (error) => {
+                    console.error(
+                        `Error sending Discord notification: ${error.message}`
                     );
-                }
-            );
+                });
+
+                req.write(requestData);
+                req.end();
+            }
 
             return;
         }
@@ -325,20 +333,31 @@ function deployRepository(
         if (DISCORD_WEBHOOK) {
             const url = new URL(DISCORD_WEBHOOK);
 
-            const notification: NotificationPayload = {
-                text: `✅ Deployment successful for ${repoName}\nPath: ${repoPath}\nTimestamp: ${new Date().toISOString()}`,
+            const notification = {
+                content: `✅ Deployment successful for ${repoName}\nPath: ${
+                    repoConfig.path
+                }\nTimestamp: ${new Date().toISOString()}`,
             };
+
+            const requestData = JSON.stringify(notification);
 
             const req = https.request({
                 hostname: url.hostname,
-                path: url.pathname,
+                path: url.pathname + url.search,
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Content-Length": Buffer.byteLength(requestData),
                 },
             });
 
-            req.write(JSON.stringify(notification));
+            req.on("error", (error) => {
+                console.error(
+                    `Error sending Discord notification: ${error.message}`
+                );
+            });
+
+            req.write(requestData);
             req.end();
         }
 
