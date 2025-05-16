@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: synuser
+      POSTGRES_PASSWORD: synpass
+      POSTGRES_DB: synnapse
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synuser -d synnapse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: ./backend-api/Dockerfile
+    environment:
+      DATABASE_URL: postgres://synuser:synpass@db:5432/synnapse
+      RUST_LOG: info
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://127.0.0.1:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      dockerfile: ./front-end/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:8000
+      API_URL: http://api:8000
+      RUST_LOG: info
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  db_data:

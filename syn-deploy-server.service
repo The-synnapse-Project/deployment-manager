@@ -1,0 +1,13 @@
+[Unit]
+Description=GitHub Webhook Listener
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/node /path/to/webhook.js
+WorkingDirectory=/path/to
+Restart=always
+User=your_username
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

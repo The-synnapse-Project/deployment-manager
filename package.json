@@ -1,0 +1,16 @@
+{
+    "name": "deploy-manager",
+    "private": true,
+    "scripts": {
+        "build": "bun build src/index.ts --outdir=dist",
+        "dev": "bun dev src/index.ts",
+        "start": "bun src/index.ts",
+        "test": "bun test"
+    },
+    "devDependencies": {
+        "@types/bun": "latest"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    }
+}
