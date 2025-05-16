@@ -315,11 +315,6 @@ function deployRepository(
         }
 
         console.log(`Deployment successful for ${repoName}`);
-        console.log("Output:", stdout);
-
-        if (stderr) {
-            console.error("Errors:", stderr);
-        }
 
         // Send notification if configured
         if (DISCORD_WEBHOOK) {

@@ -2,6 +2,7 @@
 
 # Configuration
 WEBHOOK_SERVER="http://localhost:9786"
+. .env
 
 # Help message
 show_help() {
