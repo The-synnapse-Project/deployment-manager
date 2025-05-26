@@ -286,7 +286,7 @@ function deployRepository(
                 const url = new URL(DISCORD_WEBHOOK);
 
                 const notification: NotificationPayload = {
-                    text: `❌ Deployment failed for ${repoName}\nPath: ${repoConfig.path}\nError: ${error.message}`,
+                    text: `❌ Deployment failed for ${repoName}\nPath: ${repoConfig.path}\nError: ${error.message}\nExit code: ${error.code}`,
                 };
 
                 const requestData = JSON.stringify(notification);
@@ -311,6 +311,8 @@ function deployRepository(
                 req.end();
             }
 
+            res.statusCode = 500;
+            res.end(`Deployment failed for ${repoName}: ${error.message}`);
             return;
         }
 
